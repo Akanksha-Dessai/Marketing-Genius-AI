@@ -1,90 +1,69 @@
-# MarketingGenius AI
+# MarketingGenius AI — SJ Marketing Control Tower
 
-Multi-Agent Marketing Campaign Generator — built for hackathon demos.
-
-Four AI agents work in sequence to research your market, build strategy, generate content, and forecast ROI. Download the full campaign package as a ZIP.
-
-## Tech Stack
-
-- **Frontend:** React, Vite, Tailwind CSS
-- **Backend:** Node.js, Express, TypeScript
-- **AI:** OpenAI API (gpt-4o-mini)
+Fork of [marketing-control-tower-demo](https://github.com/sjinnovation/marketing-control-tower-demo) with **MarketingGenius AI** — a 4-agent sequential campaign generator integrated via Supabase Edge Functions.
 
 ## Quick Start
 
-### 1. Install dependencies
+```bash
+npm install
+cp .env.example .env   # add your Supabase keys
+npm run dev            # http://localhost:8080
+```
+
+Login required. Navigate to **MarketingGenius AI** at `/marketing-genius` or via the Hackathon tab.
+
+## MarketingGenius Module
+
+| Agent | Role |
+|-------|------|
+| Research | Market trends, competitors, audience insights |
+| Strategy | Channels, timeline, budget allocation |
+| Content | Ads, social posts, emails |
+| Analytics | KPIs, ROI forecast |
+
+**Demo:** Click **Load Demo** (EcoBrew Coffee) → **Generate Campaign** → Download ZIP.
+
+## Supabase Setup (gexlbguucuthlmchhyne)
 
 ```bash
-npm run install:all
+npx supabase login
+npx supabase link --project-ref gexlbguucuthlmchhyne
+npx supabase db push
+npx supabase functions deploy marketing-genius-campaign
+npx supabase functions deploy marketing-genius-download
 ```
 
-### 2. Configure OpenAI API key
+Set secrets in Supabase Dashboard → Edge Functions → Secrets:
 
-```bash
-cp .env.example server/.env
-```
+- `OPENAI_KEY` — your OpenAI API key (required)
+- `OPENAI_MODEL` — optional, defaults to `gpt-4o-mini`
 
-Edit `server/.env` and add your OpenAI API key:
+## Branches
 
-```
-OPENAI_API_KEY=sk-your-key-here
-OPENAI_MODEL=gpt-4o-mini
-PORT=3001
-```
+| Branch | Description |
+|--------|-------------|
+| `main` | Control tower + MarketingGenius integration |
+| `feature/marketing-genius` | Active development branch |
+| `standalone-demo` | Original standalone Express app (archived) |
 
-### 3. Run the app
-
-```bash
-npm run dev
-```
-
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3001
-
-## 3-Minute Demo Script (for Judges)
-
-1. **Intro (30s):** "MarketingGenius AI uses four specialized agents — Research, Strategy, Content, and Analytics — that pass context to each other like a real marketing team."
-
-2. **Input (30s):** Click **Load Demo** to pre-fill EcoBrew Coffee (sustainable coffee subscription). Hit **Generate Campaign**.
-
-3. **Pipeline (60s):** Watch agents light up one by one. Explain each role as it runs:
-   - Research → market & competitors
-   - Strategy → channels & budget
-   - Content → ads, posts, emails
-   - Analytics → ROI forecast
-
-4. **Results (45s):** Walk through the tabbed output. Show copy-to-clipboard on an ad. Highlight budget allocation chart and ROI numbers.
-
-5. **Download (15s):** Click **Download ZIP** — show the markdown files and `campaign.json` inside.
-
-## Agent Architecture
+## Environment Variables
 
 ```
-User Input → Research Agent → Strategy Agent → Content Agent → Analytics Agent → Campaign Package
+VITE_SUPABASE_PROJECT_ID=gexlbguucuthlmchhyne
+VITE_SUPABASE_URL=https://gexlbguucuthlmchhyne.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Each agent receives all prior agent outputs as context, ensuring coherent end-to-end campaigns.
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/campaign/generate` | Generate campaign (SSE stream) |
-| GET | `/api/campaign/:id/download` | Download campaign ZIP |
-| GET | `/api/health` | Health check |
-
-## Project Structure
+## Architecture
 
 ```
-├── client/          # React frontend
-├── server/          # Express API + AI agents
-├── package.json     # Root dev scripts
-└── .env.example     # Environment template
+React UI (/marketing-genius)
+  → POST marketing-genius-campaign (SSE)
+    → Research → Strategy → Content → Analytics (OpenAI)
+    → Save to marketing_campaigns table
+  → GET marketing-genius-download (ZIP)
 ```
 
-## Hackathon Tips
+## Standalone Demo (archived)
 
-- Pre-load the EcoBrew demo before going on stage
-- Generation takes 30–90 seconds — narrate what each agent is doing
-- If Wi-Fi is unreliable, generate once beforehand and re-walk through cached results
-- Switch to `gpt-4o` in `.env` for higher quality output (slower, more expensive)
+The original hackathon standalone app is preserved on branch `standalone-demo`.
