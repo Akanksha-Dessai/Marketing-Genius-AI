@@ -25,10 +25,27 @@ Login required. Navigate to **MarketingGenius AI** at `/marketing-genius` or via
 
 ## Supabase Setup (gexlbguucuthlmchhyne)
 
+**Database migrations applied** via transaction pooler (`aws-1-us-east-2`).
+
+To push future migrations locally:
+
+```bash
+# Use transaction pooler (IPv4) — direct db.* host requires IPv6
+npx supabase db push --db-url "$DATABASE_URL" --yes
+```
+
+Or with login:
+
 ```bash
 npx supabase login
 npx supabase link --project-ref gexlbguucuthlmchhyne
 npx supabase db push
+```
+
+Deploy edge functions (requires Supabase access token):
+
+```bash
+npx supabase login
 npx supabase functions deploy marketing-genius-campaign
 npx supabase functions deploy marketing-genius-download
 ```
