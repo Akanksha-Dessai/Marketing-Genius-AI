@@ -1,0 +1,128 @@
+import { useCallback, useState } from "react";
+import {
+  INITIAL_AGENTS,
+  type AgentState,
+  type CompanyInput,
+  type FullCampaign,
+  type SSEEvent,
+} from "../types/campaign";
+
+interface UseCampaignStreamResult {
+  agents: AgentState[];
+  campaign: FullCampaign | null;
+  isGenerating: boolean;
+  error: string | null;
+  generate: (input: CompanyInput) => Promise<void>;
+  reset: () => void;
+}
+
+function updateAgent(
+  agents: AgentState[],
+  agentName: string,
+  update: Partial<AgentState>
+): AgentState[] {
+  return agents.map((a) => (a.name === agentName ? { ...a, ...update } : a));
+}
+
+function parseSSEChunk(buffer: string): { events: SSEEvent[]; remainder: string } {
+  const events: SSEEvent[] = [];
+  const lines = buffer.split("\n");
+  let remainder = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (i === lines.length - 1 && !buffer.endsWith("\n")) {
+      remainder = line;
+      break;
+    }
+    if (line.startsWith("data: ")) {
+      try {
+        events.push(JSON.parse(line.slice(6)) as SSEEvent);
+      } catch {
+        // skip malformed
+      }
+    }
+  }
+
+  return { events, remainder };
+}
+
+export function useCampaignStream(): UseCampaignStreamResult {
+  const [agents, setAgents] = useState<AgentState[]>(INITIAL_AGENTS);
+  const [campaign, setCampaign] = useState<FullCampaign | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = useCallback(() => {
+    setAgents(INITIAL_AGENTS);
+    setCampaign(null);
+    setError(null);
+    setIsGenerating(false);
+  }, []);
+
+  const generate = useCallback(async (input: CompanyInput) => {
+    setIsGenerating(true);
+    setError(null);
+    setCampaign(null);
+    setAgents(INITIAL_AGENTS.map((a) => ({ ...a, status: "pending" as const })));
+
+    try {
+      const response = await fetch("/api/campaign/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response stream");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const { events, remainder } = parseSSEChunk(buffer);
+        buffer = remainder;
+
+        for (const event of events) {
+          if (event.type === "agent_start") {
+            setAgents((prev) =>
+              updateAgent(prev, event.agent, { status: "running" })
+            );
+          } else if (event.type === "agent_complete") {
+            setAgents((prev) =>
+              updateAgent(prev, event.agent, {
+                status: "complete",
+                data: event.data,
+              })
+            );
+          } else if (event.type === "complete") {
+            setCampaign(event.campaign);
+          } else if (event.type === "error") {
+            setError(event.message);
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.status === "running" ? { ...a, status: "error" } : a
+              )
+            );
+          }
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+
+  return { agents, campaign, isGenerating, error, generate, reset };
+}
