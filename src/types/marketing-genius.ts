@@ -1,8 +1,10 @@
 export interface CompanyInput {
   companyName: string;
   industry: string;
+  country: string;
   productService: string;
   targetAudience: string;
+  knownCompetitors: string;
   campaignGoal: string;
   budgetRange: string;
   channels: string[];
@@ -76,11 +78,25 @@ export const CHANNEL_OPTIONS = [
   "SEO",
 ] as const;
 
+export const EMPTY_COMPANY_FORM: CompanyInput = {
+  companyName: "",
+  industry: "",
+  country: "",
+  productService: "",
+  targetAudience: "",
+  knownCompetitors: "",
+  campaignGoal: "",
+  budgetRange: "",
+  channels: [],
+};
+
 export const DEMO_COMPANY: CompanyInput = {
   companyName: "EcoBrew Coffee",
   industry: "Food & Beverage / DTC Subscription",
+  country: "United States",
   productService: "Sustainable coffee subscription boxes sourced from fair-trade farms",
   targetAudience: "Eco-conscious millennials and Gen Z urban professionals aged 25-40",
+  knownCompetitors: "Trade Coffee, Atlas Coffee Club, Blue Bottle",
   campaignGoal: "Acquire 5,000 new subscribers in Q3 with 20% month-over-month growth",
   budgetRange: "$25,000 - $50,000",
   channels: ["Social Media", "Email", "Influencer", "Content Marketing"],

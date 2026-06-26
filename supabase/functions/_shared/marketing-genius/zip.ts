@@ -9,7 +9,7 @@ function researchToMarkdown(campaign: FullCampaign): string {
     audienceInsights: string[];
     opportunities: string[];
   };
-  return `# Market Research: ${input.companyName}\n\n## Summary\n${r.summary}\n\n## Market Trends\n${r.marketTrends.map((t) => `- ${t}`).join("\n")}\n\n## Competitors\n${r.competitors.map((c) => `### ${c.name}\n- **Strength:** ${c.strength}\n- **Weakness:** ${c.weakness}`).join("\n\n")}\n\n## Audience Insights\n${r.audienceInsights.map((i) => `- ${i}`).join("\n")}\n\n## Opportunities\n${r.opportunities.map((o) => `- ${o}`).join("\n")}`;
+  return `# Market Research: ${input.companyName}\n**Market:** ${input.country}\n\n## Summary\n${r.summary}\n\n## Market Trends\n${r.marketTrends.map((t) => `- ${t}`).join("\n")}\n\n## Competitors\n${r.competitors.map((c) => `### ${c.name}\n- **Strength:** ${c.strength}\n- **Weakness:** ${c.weakness}`).join("\n\n")}\n\n## Audience Insights\n${r.audienceInsights.map((i) => `- ${i}`).join("\n")}\n\n## Opportunities\n${r.opportunities.map((o) => `- ${o}`).join("\n")}`;
 }
 
 function strategyToMarkdown(campaign: FullCampaign): string {

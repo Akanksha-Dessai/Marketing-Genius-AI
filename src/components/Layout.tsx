@@ -177,7 +177,10 @@ const Layout = () => {
   const navigation = getNavigation(currentRole);
 
   const isLinkedInGenerateRoute = location.pathname.includes('/content/linkedin/') && location.pathname.endsWith('/generate');
-  const isFullWidthRoute = location.pathname === '/image-ai' || location.pathname === '/workspace';
+  const isFullWidthRoute =
+    location.pathname === '/image-ai' ||
+    location.pathname === '/workspace' ||
+    location.pathname === '/marketing-genius';
 
   if (isLinkedInGenerateRoute) {
     return (

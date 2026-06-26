@@ -20,8 +20,10 @@ export type AgentName = "research" | "strategy" | "content" | "analytics";
 export interface CompanyInput {
   companyName: string;
   industry: string;
+  country: string;
   productService: string;
   targetAudience: string;
+  knownCompetitors?: string;
   campaignGoal: string;
   budgetRange: string;
   channels: string[];
@@ -45,7 +47,7 @@ export type SSEEvent =
 
 function validateCompanyInput(raw: unknown): CompanyInput {
   const input = raw as CompanyInput;
-  if (!input?.companyName || !input?.industry || !input?.productService) {
+  if (!input?.companyName || !input?.industry || !input?.country || !input?.productService) {
     throw new Error("Invalid campaign input: missing required fields");
   }
   if (!Array.isArray(input.channels) || input.channels.length === 0) {
