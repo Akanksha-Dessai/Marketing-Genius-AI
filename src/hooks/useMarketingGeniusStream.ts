@@ -144,10 +144,13 @@ export async function downloadCampaignZip(campaignId: string): Promise<void> {
   if (!response.ok) throw new Error("Download failed");
 
   const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition");
+  const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+  const filename = filenameMatch?.[1] ?? "campaign-package.zip";
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "campaign.zip";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }

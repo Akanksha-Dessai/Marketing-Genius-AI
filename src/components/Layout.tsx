@@ -100,7 +100,7 @@ const Layout = () => {
       { name: "Video AI", href: "/workspace", icon: Video, current: false },
       { name: "Image AI", href: "/image-ai", icon: ImageIcon, current: false },
       {
-        name: "Marketing Genius Campaign AI",
+        name: "Marketing Genius AI",
         href: "/marketing-genius",
         icon: Sparkles,
         current: false,

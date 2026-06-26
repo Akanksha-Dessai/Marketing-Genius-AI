@@ -1,3 +1,4 @@
+import { strToU8, zipSync } from "npm:fflate@0.8.2";
 import type { FullCampaign } from "./orchestrator.ts";
 
 function researchToMarkdown(campaign: FullCampaign): string {
@@ -55,93 +56,10 @@ export function buildCampaignZipFiles(campaign: FullCampaign): Record<string, st
   };
 }
 
-// Simple ZIP builder without external deps (store method)
 export function createZipBuffer(files: Record<string, string>): Uint8Array {
-  const encoder = new TextEncoder();
-  const parts: Uint8Array[] = [];
-  const centralDir: Uint8Array[] = [];
-  let offset = 0;
-
+  const entries: Record<string, Uint8Array> = {};
   for (const [name, content] of Object.entries(files)) {
-    const nameBytes = encoder.encode(name);
-    const contentBytes = encoder.encode(content);
-    const crc = crc32(contentBytes);
-
-    const localHeader = new Uint8Array(30 + nameBytes.length);
-    const view = new DataView(localHeader.buffer);
-    view.setUint32(0, 0x04034b50, true);
-    view.setUint16(4, 20, true);
-    view.setUint16(8, 0, true);
-    view.setUint16(10, 0, true);
-    view.setUint16(12, 0, true);
-    view.setUint16(14, 0, true);
-    view.setUint32(16, crc, true);
-    view.setUint32(20, contentBytes.length, true);
-    view.setUint32(24, contentBytes.length, true);
-    view.setUint16(28, nameBytes.length, true);
-    localHeader.set(nameBytes, 30);
-
-    parts.push(localHeader, contentBytes);
-
-    const cdEntry = new Uint8Array(46 + nameBytes.length);
-    const cdView = new DataView(cdEntry.buffer);
-    cdView.setUint32(0, 0x02014b50, true);
-    cdView.setUint16(4, 20, true);
-    cdView.setUint16(6, 20, true);
-    cdView.setUint16(10, 0, true);
-    cdView.setUint16(12, 0, true);
-    cdView.setUint16(14, 0, true);
-    cdView.setUint32(16, crc, true);
-    cdView.setUint32(20, contentBytes.length, true);
-    cdView.setUint32(24, contentBytes.length, true);
-    cdView.setUint16(28, nameBytes.length, true);
-    cdView.setUint32(42, offset, true);
-    cdEntry.set(nameBytes, 46);
-    centralDir.push(cdEntry);
-
-    offset += localHeader.length + contentBytes.length;
+    entries[name] = strToU8(content);
   }
-
-  const centralDirOffset = offset;
-  let centralDirSize = 0;
-  for (const entry of centralDir) {
-    centralDirSize += entry.length;
-  }
-
-  const endRecord = new Uint8Array(22);
-  const endView = new DataView(endRecord.buffer);
-  endView.setUint32(0, 0x06054b50, true);
-  endView.setUint16(4, 0, true);
-  endView.setUint16(6, 0, true);
-  endView.setUint16(8, Object.keys(files).length, true);
-  endView.setUint16(10, Object.keys(files).length, true);
-  endView.setUint32(12, centralDirSize, true);
-  endView.setUint32(16, centralDirOffset, true);
-  endView.setUint16(20, 0, true);
-
-  const totalLength = offset + centralDirSize + endRecord.length;
-  const result = new Uint8Array(totalLength);
-  let pos = 0;
-  for (const part of parts) {
-    result.set(part, pos);
-    pos += part.length;
-  }
-  for (const entry of centralDir) {
-    result.set(entry, pos);
-    pos += entry.length;
-  }
-  result.set(endRecord, pos);
-
-  return result;
-}
-
-function crc32(data: Uint8Array): number {
-  let crc = 0xffffffff;
-  for (let i = 0; i < data.length; i++) {
-    crc ^= data[i];
-    for (let j = 0; j < 8; j++) {
-      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-    }
-  }
-  return (crc ^ 0xffffffff) >>> 0;
+  return zipSync(entries);
 }

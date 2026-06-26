@@ -13,7 +13,7 @@ export default function SubmissionForm() {
   const eventId = searchParams.get("event");
   const teamId = searchParams.get("team");
   const navigate = useNavigate();
-  
+
   const submitMutation = useSubmitProject();
 
   const [projectTitle, setProjectTitle] = useState("");
@@ -23,7 +23,7 @@ export default function SubmissionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!eventId || !teamId) return;
 
     await submitMutation.mutateAsync({

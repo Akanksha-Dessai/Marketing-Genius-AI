@@ -1,40 +1,32 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Sparkles,
   Search,
   Target,
   PenTool,
   BarChart3,
-  CheckCircle2,
   Loader2,
-  Download,
-  Copy,
-  Check,
   AlertCircle,
-  Users,
-  MousePointerClick,
-  Heart,
-  TrendingUp,
   Bot,
+  Wand2,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMarketingGeniusStream } from "@/hooks/useMarketingGeniusStream";
-import { CampaignPdfTemplate } from "@/components/marketing-genius/CampaignPdfTemplate";
-import { campaignPdfFilename, generateCampaignPdf } from "@/lib/marketing-genius/generateCampaignPdf";
+import { CampaignHistory } from "@/components/marketing-genius/CampaignHistory";
+import { CampaignResults, AgentPipeline } from "@/components/marketing-genius/CampaignResults";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CHANNEL_OPTIONS,
+  DEMO_COMPANY,
   EMPTY_COMPANY_FORM,
   INITIAL_AGENTS,
   type CompanyInput,
   type FullCampaign,
-  type AgentState,
 } from "@/types/marketing-genius";
 import { cn } from "@/lib/utils";
 
@@ -51,25 +43,6 @@ function RequiredMark() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-    >
-      {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-      {copied ? "Copied" : "Copy"}
-    </button>
   );
 }
 
@@ -98,67 +71,6 @@ function ChannelChip({
   );
 }
 
-function AgentPipeline({ agents, isGenerating }: { agents: AgentState[]; isGenerating: boolean }) {
-  const show = isGenerating || agents.some((a) => a.status !== "pending");
-  if (!show) return null;
-
-  return (
-    <div className="space-y-3 w-full">
-      <h2 className="text-lg font-semibold">AI Agent Pipeline</h2>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 w-full">
-        {agents.map((agent, index) => {
-          const Icon = ICONS[agent.name];
-          const isRunning = agent.status === "running";
-          const isComplete = agent.status === "complete";
-          const isError = agent.status === "error";
-
-          return (
-            <Card
-              key={agent.name}
-              className={cn(
-                "transition-all",
-                isRunning && "border-primary/50 ring-2 ring-primary/20 shadow-md",
-                isComplete && "border-green-500/20 bg-green-500/[0.02]"
-              )}
-            >
-              <CardHeader className="pb-3 pt-4 px-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg shrink-0",
-                      isComplete && "bg-green-500/10 text-green-600",
-                      isRunning && "bg-primary/10 text-primary",
-                      !isComplete && !isRunning && "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {isComplete ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : isRunning ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Icon className="w-4 h-4" />
-                    )}
-                  </div>
-                  <Badge
-                    variant={isComplete ? "default" : isRunning ? "secondary" : isError ? "destructive" : "outline"}
-                    className={cn("text-xs shrink-0", isComplete && "bg-primary")}
-                  >
-                    {isComplete ? "Complete" : isRunning ? "Running" : isError ? "Error" : "Waiting"}
-                  </Badge>
-                </div>
-                <CardTitle className="text-sm font-semibold leading-tight">
-                  {index + 1}. {agent.label}
-                </CardTitle>
-                <CardDescription className="text-xs leading-relaxed">{agent.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function OutputPlaceholder() {
   return (
     <Card className="border-dashed border-border/80 bg-muted/20 shadow-none w-full">
@@ -168,8 +80,8 @@ function OutputPlaceholder() {
         </div>
         <h3 className="text-lg font-semibold mb-2">Your campaign workspace</h3>
         <p className="text-sm text-muted-foreground max-w-md mb-6">
-          Complete the form on the left and click Generate Campaign. Four AI agents will run here in
-          sequence — research, strategy, content, and analytics.
+          Click <strong>Load Demo</strong> for a quick start, or fill in the form and click{" "}
+          <strong>Generate Campaign</strong>. Four AI agents run in sequence.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left">
           {INITIAL_AGENTS.map((agent, index) => {
@@ -198,219 +110,18 @@ function OutputPlaceholder() {
   );
 }
 
-function CampaignResults({ campaign }: { campaign: FullCampaign }) {
-  const { research, strategy, content, analytics, input } = campaign;
-  const pdfRef = useRef<HTMLDivElement>(null);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current) return;
-    setDownloadingPdf(true);
-    try {
-      await generateCampaignPdf(pdfRef.current, campaignPdfFilename(input.companyName));
-    } catch {
-      alert("PDF generation failed. Please try again.");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
-  const metrics = [
-    { label: "Est. Reach", value: analytics.estimatedReach, icon: Users },
-    { label: "Est. CTR", value: analytics.estimatedCTR, icon: MousePointerClick },
-    { label: "Engagement", value: analytics.engagementForecast, icon: Heart },
-    { label: "ROI", value: analytics.roiProjection, icon: TrendingUp },
-  ];
-
-  return (
-    <>
-      <div className="fixed top-0 -left-[10000px] pointer-events-none" aria-hidden="true">
-        <CampaignPdfTemplate ref={pdfRef} campaign={campaign} />
-      </div>
-      <Card className="shadow-md border-border/80 w-full">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="space-y-1">
-            <CardTitle className="text-xl">Campaign Package: {input.companyName}</CardTitle>
-            <CardDescription>
-              Generated by 4 AI agents · {input.country} · {new Date(campaign.createdAt).toLocaleString()}
-            </CardDescription>
-          </div>
-          <Button
-            onClick={handleDownloadPdf}
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            disabled={downloadingPdf}
-          >
-            {downloadingPdf ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating PDF...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Download PDF
-              </>
-            )}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="research">
-          <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/60 p-1">
-            <TabsTrigger value="research" className="flex-1 sm:flex-none">
-              Research
-            </TabsTrigger>
-            <TabsTrigger value="strategy" className="flex-1 sm:flex-none">
-              Strategy
-            </TabsTrigger>
-            <TabsTrigger value="content" className="flex-1 sm:flex-none">
-              Content
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 sm:flex-none">
-              Analytics
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="research" className="mt-6 space-y-6">
-            <p className="text-muted-foreground leading-relaxed">{research.summary}</p>
-            <div>
-              <h4 className="font-semibold mb-3">Market Trends</h4>
-              <ul className="space-y-2">
-                {research.marketTrends.map((t, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="text-primary mt-0.5">•</span>
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Competitors</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {research.competitors.map((c, i) => (
-                  <div key={i} className="rounded-lg border border-border/80 bg-muted/30 p-4 space-y-2">
-                    <p className="font-medium">{c.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">Strength:</span> {c.strength}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">Weakness:</span> {c.weakness}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="strategy" className="mt-6 space-y-6">
-            <h3 className="text-xl font-bold">{strategy.campaignName}</h3>
-            <div>
-              <h4 className="font-semibold mb-3">Objectives</h4>
-              <ul className="space-y-2">
-                {strategy.objectives.map((o, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="text-primary">•</span>
-                    <span>{o}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Budget Allocation</h4>
-              <div className="space-y-3">
-                {strategy.budgetAllocation.map((b, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="font-medium">{b.category}</span>
-                      <span className="text-muted-foreground">
-                        {b.percentage}% · {b.amount}
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-primary transition-all"
-                        style={{ width: `${b.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="content" className="mt-6 space-y-4">
-            {content.ads.map((ad, i) => (
-              <div key={i} className="rounded-lg border border-border/80 bg-card p-4 space-y-2">
-                <div className="flex justify-between items-start gap-3">
-                  <h5 className="font-semibold">{ad.headline}</h5>
-                  <CopyButton text={`${ad.headline}\n\n${ad.body}\n\nCTA: ${ad.cta}`} />
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{ad.body}</p>
-                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">{ad.cta}</Badge>
-              </div>
-            ))}
-            {content.socialPosts.map((post, i) => (
-              <div key={i} className="rounded-lg border border-border/80 bg-muted/20 p-4 space-y-2">
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="font-medium">
-                    {post.platform}
-                  </Badge>
-                  <CopyButton text={post.text} />
-                </div>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.text}</p>
-              </div>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="analytics" className="mt-6 space-y-6">
-            <div className="grid grid-cols-2 gap-3">
-              {metrics.map((s) => (
-                <div
-                  key={s.label}
-                  className="rounded-lg border border-border/80 bg-muted/30 p-4 text-center space-y-2"
-                >
-                  <div className="flex justify-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <s.icon className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                  <p className="font-semibold text-sm">{s.value}</p>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Recommendations</h4>
-              <ul className="space-y-2">
-                {analytics.recommendations.map((r, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="text-primary">→</span>
-                    <span>{r}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
-    </>
-  );
-}
-
 function CompanyForm({
   form,
   setForm,
   isGenerating,
   onSubmit,
+  onLoadDemo,
 }: {
   form: CompanyInput;
   setForm: React.Dispatch<React.SetStateAction<CompanyInput>>;
   isGenerating: boolean;
   onSubmit: () => void;
+  onLoadDemo: () => void;
 }) {
   const toggleChannel = (channel: string) => {
     setForm((prev) => ({
@@ -439,6 +150,17 @@ function CompanyForm({
       }}
       className="space-y-5"
     >
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full border-dashed border-primary/40 hover:bg-primary/5"
+        onClick={onLoadDemo}
+        disabled={isGenerating}
+      >
+        <Wand2 className="w-4 h-4 mr-2 text-primary" />
+        Load Demo — EcoBrew Coffee
+      </Button>
+
       <div className="space-y-4">
         <SectionLabel>Business Profile</SectionLabel>
         <div className="space-y-4">
@@ -615,18 +337,37 @@ function CompanyForm({
 }
 
 export default function MarketingGeniusPage() {
+  const queryClient = useQueryClient();
   const { agents, campaign, isGenerating, error, generate, reset } = useMarketingGeniusStream();
   const [form, setForm] = useState<CompanyInput>(EMPTY_COMPANY_FORM);
+  const [viewedCampaign, setViewedCampaign] = useState<FullCampaign | null>(null);
 
+  const activeCampaign = viewedCampaign ?? campaign;
   const showPipeline = isGenerating || agents.some((a) => a.status !== "pending");
-  const showPlaceholder = !showPipeline && !campaign;
+  const showPlaceholder = !showPipeline && !activeCampaign;
+
+  const handleGenerate = async () => {
+    setViewedCampaign(null);
+    await generate(form);
+    queryClient.invalidateQueries({ queryKey: ["marketing-campaigns"] });
+  };
+
+  const handleLoadDemo = () => {
+    setForm(DEMO_COMPANY);
+    setViewedCampaign(null);
+  };
+
+  const handleSelectHistory = (selected: FullCampaign) => {
+    setViewedCampaign(selected);
+    setForm(selected.input);
+  };
 
   return (
     <div className="w-full space-y-5 py-1">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold flex items-center gap-2.5">
           <Sparkles className="w-6 h-6 text-primary" />
-          Marketing Genius Campaign AI
+          Marketing Genius AI
         </h1>
         <p className="text-sm text-muted-foreground">
           Four specialized AI agents research your market, craft strategy, generate content, and forecast ROI.
@@ -647,8 +388,7 @@ export default function MarketingGeniusPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
-        {/* Left: form */}
-        <div className="lg:col-span-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
           <Card className="shadow-sm border-border/80 w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Company Details</CardTitle>
@@ -659,17 +399,18 @@ export default function MarketingGeniusPage() {
                 form={form}
                 setForm={setForm}
                 isGenerating={isGenerating}
-                onSubmit={() => generate(form)}
+                onSubmit={handleGenerate}
+                onLoadDemo={handleLoadDemo}
               />
             </CardContent>
           </Card>
+          <CampaignHistory activeCampaignId={activeCampaign?.id} onSelect={handleSelectHistory} />
         </div>
 
-        {/* Right: pipeline + results */}
         <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
           {showPlaceholder && <OutputPlaceholder />}
           {showPipeline && <AgentPipeline agents={agents} isGenerating={isGenerating} />}
-          {campaign && <CampaignResults campaign={campaign} />}
+          {activeCampaign && <CampaignResults campaign={activeCampaign} />}
         </div>
       </div>
     </div>

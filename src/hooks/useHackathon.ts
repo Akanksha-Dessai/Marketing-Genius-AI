@@ -494,19 +494,18 @@ export const useSubmitProject = () => {
 
       if (!participant) throw new Error("Participant not found");
 
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("hackathon_submissions")
         .upsert({
-          event_id: data.eventId,
           team_id: data.teamId,
-          project_title: data.projectTitle,
+          submission_title: data.projectTitle,
           description: data.description,
-          demo_video_url: data.demoVideoUrl,
-          github_url: data.githubUrl,
+          video_url: data.demoVideoUrl || null,
+          github_url: data.githubUrl || null,
           status: "submitted",
           submitted_at: new Date().toISOString(),
-          submitted_by: participant.id,
-        });
+          is_finalized: true,
+        }, { onConflict: "team_id" });
 
       if (error) throw error;
     },

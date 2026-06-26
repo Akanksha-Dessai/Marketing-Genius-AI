@@ -15,7 +15,6 @@ import {
   UserPlus,
   Calendar,
   ArrowRight,
-  Sparkles
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { format } from "date-fns";
@@ -68,13 +67,6 @@ export const HackathonBrandTab = () => {
       icon: ClipboardCheck,
       href: "/hackathon/submission",
       variant: "outline" as const,
-    },
-    {
-      title: "MarketingGenius AI",
-      description: "Generate full marketing campaigns with 4 AI agents",
-      icon: Sparkles,
-      href: "/marketing-genius",
-      variant: "default" as const,
     },
     {
       title: "Judging",

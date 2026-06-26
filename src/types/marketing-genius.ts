@@ -108,3 +108,60 @@ export const INITIAL_AGENTS: AgentState[] = [
   { name: "content", label: "Content Agent", description: "Generating ads, posts & emails", status: "pending" },
   { name: "analytics", label: "Analytics Agent", description: "Forecasting engagement & ROI", status: "pending" },
 ];
+
+export const AGENT_STATUS_MESSAGES: Record<AgentName, string[]> = {
+  research: [
+    "Scanning market trends and industry reports…",
+    "Mapping competitor positioning and gaps…",
+    "Profiling target audience segments…",
+  ],
+  strategy: [
+    "Defining campaign objectives and KPIs…",
+    "Allocating budget across channels…",
+    "Building phased launch timeline…",
+  ],
+  content: [
+    "Drafting ad variants and headlines…",
+    "Writing social posts for each platform…",
+    "Composing email nurture sequences…",
+  ],
+  analytics: [
+    "Forecasting reach and engagement…",
+    "Calculating ROI projections…",
+    "Generating optimization recommendations…",
+  ],
+};
+
+export interface MarketingCampaignRow {
+  id: string;
+  user_id: string;
+  input: CompanyInput;
+  research: ResearchOutput;
+  strategy: StrategyOutput;
+  content: ContentOutput;
+  analytics: AnalyticsOutput;
+  created_at: string;
+}
+
+export function rowToFullCampaign(row: MarketingCampaignRow): FullCampaign {
+  return {
+    id: row.id,
+    input: row.input,
+    research: row.research,
+    strategy: row.strategy,
+    content: row.content,
+    analytics: row.analytics,
+    createdAt: row.created_at,
+  };
+}
+
+export const HACKATHON_SUBMISSION_DEFAULTS = {
+  projectTitle: "Marketing Genius AI — Multi-Agent Campaign Generator",
+  description: `Problem: Marketing teams spend 2–3 days per campaign on research, strategy, copy, and forecasts.
+
+Solution: Marketing Genius AI orchestrates four specialized agents (Research, Strategy, Content, Analytics) in sequence via Supabase Edge Functions with live SSE streaming. Each agent's output feeds the next.
+
+Tech: React, TypeScript, Supabase Edge Functions, OpenAI, pgvector, TanStack Query.
+
+Live demo: /marketing-genius`,
+};

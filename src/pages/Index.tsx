@@ -16,7 +16,9 @@ import {
   Sparkles,
   Clock,
   Bot,
-  MapPin
+  MapPin,
+  Megaphone,
+  ArrowRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +35,8 @@ import { TestimonialDashboardSection } from "@/components/marketing/TestimonialD
 import { SEODashboardSection } from "@/features/seo-hub/components/SEODashboardSection";
 
 export default function Index() {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const dashboardData = useDashboardData();
   const [viewMode, setViewMode] = useState<"overview" | "comparison">("overview");
 
@@ -308,6 +310,14 @@ export default function Index() {
       bullets: ["Hook ideas from transcripts", "Multi-channel repurpose", "Content calendar"],
       location: "Brand Pages → AI Solutions",
     },
+    {
+      name: "Campaign Builder",
+      icon: Megaphone,
+      color: "from-indigo-500 to-violet-400",
+      bullets: ["4-agent campaign pipeline", "Research to ROI forecast", "Export PDF & ZIP"],
+      location: "AI Tools → Marketing Genius",
+      href: "/marketing-genius",
+    },
   ];
 
   return (
@@ -323,11 +333,23 @@ export default function Index() {
             <h2 className="text-lg font-bold">✨ Meet Your AI Agents</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4 ml-11">Run these within your brands & projects for context-aware insights</p>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {aiAgents.map((agent) => (
-              <div 
+              <div
                 key={agent.name}
-                className="p-4 rounded-lg bg-background/80 backdrop-blur border border-border"
+                role={agent.href ? "button" : undefined}
+                tabIndex={agent.href ? 0 : undefined}
+                onClick={agent.href ? () => navigate(agent.href!) : undefined}
+                onKeyDown={
+                  agent.href
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") navigate(agent.href!);
+                      }
+                    : undefined
+                }
+                className={`p-4 rounded-lg bg-background/80 backdrop-blur border border-border ${
+                  agent.href ? "cursor-pointer hover:border-primary/40 hover:shadow-md transition-all" : ""
+                }`}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`p-2 rounded-lg bg-gradient-to-br ${agent.color} shadow-lg`}>
@@ -343,11 +365,12 @@ export default function Index() {
                     </li>
                   ))}
                 </ul>
-                <div className="pt-2 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span className="text-primary font-medium">{agent.location}</span>
+                <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 min-w-0">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="text-primary font-medium truncate">{agent.location}</span>
                   </p>
+                  {agent.href && <ArrowRight className="h-3.5 w-3.5 text-primary shrink-0" />}
                 </div>
               </div>
             ))}
