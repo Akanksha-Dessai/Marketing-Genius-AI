@@ -26,3 +26,6 @@ supabase/.temp/
 .env
 .env.local
 server/.env
+
+# Claude/Cursor temp cwd stubs (not project files)
+tmpclaude-*

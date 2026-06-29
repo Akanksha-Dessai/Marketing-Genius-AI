@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Bot,
   Wand2,
+  History,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,11 @@ import { Separator } from "@/components/ui/separator";
 import { useMarketingGeniusStream } from "@/hooks/useMarketingGeniusStream";
 import { CampaignHistory } from "@/components/marketing-genius/CampaignHistory";
 import { CampaignResults, AgentPipeline } from "@/components/marketing-genius/CampaignResults";
+import {
+  MarketingGeniusSidebar,
+  MarketingGeniusSubNav,
+  type MarketingGeniusView,
+} from "@/components/marketing-genius/MarketingGeniusNav";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CHANNEL_OPTIONS,
@@ -124,23 +130,26 @@ function CompanyForm({
   onLoadDemo: () => void;
 }) {
   const toggleChannel = (channel: string) => {
-    setForm((prev) => ({
-      ...prev,
-      channels: prev.channels.includes(channel)
-        ? prev.channels.filter((c) => c !== channel)
-        : [...prev.channels, channel],
-    }));
+    setForm((prev) => {
+      const channels = prev.channels ?? [];
+      return {
+        ...prev,
+        channels: channels.includes(channel)
+          ? channels.filter((c) => c !== channel)
+          : [...channels, channel],
+      };
+    });
   };
 
   const canSubmit =
-    form.companyName.trim() &&
-    form.industry.trim() &&
-    form.country.trim() &&
-    form.productService.trim() &&
-    form.targetAudience.trim() &&
-    form.campaignGoal.trim() &&
-    form.budgetRange.trim() &&
-    form.channels.length > 0;
+    (form.companyName?.trim() ?? "") &&
+    (form.industry?.trim() ?? "") &&
+    (form.country?.trim() ?? "") &&
+    (form.productService?.trim() ?? "") &&
+    (form.targetAudience?.trim() ?? "") &&
+    (form.campaignGoal?.trim() ?? "") &&
+    (form.budgetRange?.trim() ?? "") &&
+    (form.channels?.length ?? 0) > 0;
 
   return (
     <form
@@ -171,7 +180,7 @@ function CompanyForm({
             </Label>
             <Input
               id="companyName"
-              value={form.companyName}
+              value={form.companyName ?? ""}
               onChange={(e) => setForm({ ...form, companyName: e.target.value })}
               placeholder="e.g. DataNimbus"
               required
@@ -185,7 +194,7 @@ function CompanyForm({
             </Label>
             <Input
               id="industry"
-              value={form.industry}
+              value={form.industry ?? ""}
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
               placeholder="e.g. B2B SaaS / Data Analytics"
               required
@@ -199,7 +208,7 @@ function CompanyForm({
             </Label>
             <Input
               id="country"
-              value={form.country}
+              value={form.country ?? ""}
               onChange={(e) => setForm({ ...form, country: e.target.value })}
               placeholder="e.g. United States, India"
               required
@@ -213,7 +222,7 @@ function CompanyForm({
             </Label>
             <Textarea
               id="productService"
-              value={form.productService}
+              value={form.productService ?? ""}
               onChange={(e) => setForm({ ...form, productService: e.target.value })}
               placeholder="Describe what you sell or offer"
               rows={3}
@@ -228,7 +237,7 @@ function CompanyForm({
             </Label>
             <Textarea
               id="targetAudience"
-              value={form.targetAudience}
+              value={form.targetAudience ?? ""}
               onChange={(e) => setForm({ ...form, targetAudience: e.target.value })}
               placeholder="Who are you trying to reach?"
               rows={2}
@@ -251,7 +260,7 @@ function CompanyForm({
             </Label>
             <Input
               id="campaignGoal"
-              value={form.campaignGoal}
+              value={form.campaignGoal ?? ""}
               onChange={(e) => setForm({ ...form, campaignGoal: e.target.value })}
               placeholder="e.g. Generate 300 qualified leads in Q3"
               required
@@ -265,7 +274,7 @@ function CompanyForm({
             </Label>
             <Input
               id="budgetRange"
-              value={form.budgetRange}
+              value={form.budgetRange ?? ""}
               onChange={(e) => setForm({ ...form, budgetRange: e.target.value })}
               placeholder="e.g. $50,000 - $100,000"
               required
@@ -278,7 +287,7 @@ function CompanyForm({
             </Label>
             <Textarea
               id="knownCompetitors"
-              value={form.knownCompetitors}
+              value={form.knownCompetitors ?? ""}
               onChange={(e) => setForm({ ...form, knownCompetitors: e.target.value })}
               placeholder="e.g. Zoho Analytics, Tableau — helps AI focus research"
               rows={2}
@@ -300,12 +309,12 @@ function CompanyForm({
             <ChannelChip
               key={ch}
               label={ch}
-              selected={form.channels.includes(ch)}
+              selected={form.channels?.includes(ch) ?? false}
               onClick={() => !isGenerating && toggleChannel(ch)}
             />
           ))}
         </div>
-        {form.channels.length === 0 && (
+        {(form.channels?.length ?? 0) === 0 && (
           <p className="text-xs text-muted-foreground">Select at least one channel to continue.</p>
         )}
       </div>
@@ -336,81 +345,172 @@ function CompanyForm({
   );
 }
 
+function HomeOverview({ onCreateClick }: { onCreateClick: () => void }) {
+  return (
+    <Card className="border-border/80 shadow-sm w-full">
+      <CardContent className="py-12 px-6">
+        <div className="max-w-2xl mx-auto text-center space-y-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold">Welcome to Marketing Genius AI</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Four specialized AI agents research your market, craft strategy, generate content, and
+              forecast ROI — all in one workflow.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+            {INITIAL_AGENTS.map((agent, index) => {
+              const Icon = ICONS[agent.name];
+              return (
+                <div
+                  key={agent.name}
+                  className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary text-xs font-semibold">
+                    {index + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                      {agent.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <Button
+            onClick={onCreateClick}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Create Your First Campaign
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HistoryPlaceholder() {
+  return (
+    <Card className="border-dashed border-border/80 bg-muted/20 shadow-none w-full">
+      <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+          <History className="w-7 h-7" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Campaign Library</h3>
+        <p className="text-sm text-muted-foreground max-w-md">
+          Select a saved campaign from the library to view its research, strategy, content, and analytics.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function MarketingGeniusPage() {
   const queryClient = useQueryClient();
   const { agents, campaign, isGenerating, error, generate, reset } = useMarketingGeniusStream();
   const [form, setForm] = useState<CompanyInput>(EMPTY_COMPANY_FORM);
-  const [viewedCampaign, setViewedCampaign] = useState<FullCampaign | null>(null);
+  const [historyCampaign, setHistoryCampaign] = useState<FullCampaign | null>(null);
+  const [activeView, setActiveView] = useState<MarketingGeniusView>("create");
 
-  const activeCampaign = viewedCampaign ?? campaign;
   const showPipeline = isGenerating || agents.some((a) => a.status !== "pending");
-  const showPlaceholder = !showPipeline && !activeCampaign;
+  const showCreatePlaceholder = !showPipeline && !campaign;
 
   const handleGenerate = async () => {
-    setViewedCampaign(null);
     await generate(form);
     queryClient.invalidateQueries({ queryKey: ["marketing-campaigns"] });
   };
 
   const handleLoadDemo = () => {
     setForm(DEMO_COMPANY);
-    setViewedCampaign(null);
   };
 
   const handleSelectHistory = (selected: FullCampaign) => {
-    setViewedCampaign(selected);
-    setForm(selected.input);
+    setHistoryCampaign(selected);
   };
 
   return (
-    <div className="w-full space-y-5 py-1">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold flex items-center gap-2.5">
-          <Sparkles className="w-6 h-6 text-primary" />
-          Marketing Genius AI
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Four specialized AI agents research your market, craft strategy, generate content, and forecast ROI.
-        </p>
-      </div>
+    <div className="w-full py-1">
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+        <MarketingGeniusSidebar activeView={activeView} onViewChange={setActiveView} />
 
-      {error && (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
-          <div>
-            <p className="font-medium text-destructive">Generation failed</p>
-            <p className="text-sm text-muted-foreground mt-1">{error}</p>
-            <button type="button" onClick={reset} className="text-sm underline mt-2 hover:text-foreground">
-              Try again
-            </button>
+        <div className="flex-1 min-w-0 space-y-5">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold flex items-center gap-2.5">
+              <Sparkles className="w-6 h-6 text-primary" />
+              Marketing Genius AI
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Four specialized AI agents research your market, craft strategy, generate content, and
+              forecast ROI.
+            </p>
           </div>
-        </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
-        <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-          <Card className="shadow-sm border-border/80 w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Company Details</CardTitle>
-              <CardDescription>Tell our AI agents about your business and campaign goals</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CompanyForm
-                form={form}
-                setForm={setForm}
-                isGenerating={isGenerating}
-                onSubmit={handleGenerate}
-                onLoadDemo={handleLoadDemo}
-              />
-            </CardContent>
-          </Card>
-          <CampaignHistory activeCampaignId={activeCampaign?.id} onSelect={handleSelectHistory} />
-        </div>
+          <MarketingGeniusSubNav activeView={activeView} onViewChange={setActiveView} />
 
-        <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
-          {showPlaceholder && <OutputPlaceholder />}
-          {showPipeline && <AgentPipeline agents={agents} isGenerating={isGenerating} />}
-          {activeCampaign && <CampaignResults campaign={activeCampaign} />}
+          {error && (
+            <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+              <div>
+                <p className="font-medium text-destructive">Generation failed</p>
+                <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                <button type="button" onClick={reset} className="text-sm underline mt-2 hover:text-foreground">
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeView === "home" && <HomeOverview onCreateClick={() => setActiveView("create")} />}
+
+          {activeView === "create" && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
+              <div className="lg:col-span-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+                <Card className="shadow-sm border-border/80 w-full">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Company Details</CardTitle>
+                    <CardDescription>Tell our AI agents about your business and campaign goals</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <CompanyForm
+                      form={form}
+                      setForm={setForm}
+                      isGenerating={isGenerating}
+                      onSubmit={handleGenerate}
+                      onLoadDemo={handleLoadDemo}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
+                {showCreatePlaceholder && <OutputPlaceholder />}
+                {showPipeline && <AgentPipeline agents={agents} isGenerating={isGenerating} />}
+                {campaign && <CampaignResults campaign={campaign} />}
+              </div>
+            </div>
+          )}
+
+          {activeView === "history" && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
+              <div className="lg:col-span-4 lg:sticky lg:top-20">
+                <CampaignHistory
+                  variant="full"
+                  activeCampaignId={historyCampaign?.id}
+                  onSelect={handleSelectHistory}
+                />
+              </div>
+              <div className="lg:col-span-8 space-y-5 min-w-0 w-full">
+                {!historyCampaign && <HistoryPlaceholder />}
+                {historyCampaign && <CampaignResults campaign={historyCampaign} />}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

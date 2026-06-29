@@ -31,6 +31,7 @@ import { useState } from "react";
 import ProfileDropdown from "./ProfileDropdown";
 import FeedbackButton from "./FeedbackButton";
 import logo from "@/assets/logo-sji.png";
+import { cn } from "@/lib/utils";
 
 interface NavigationItem {
   name: string;
@@ -175,6 +176,25 @@ const Layout = () => {
   };
 
   const navigation = getNavigation(currentRole);
+
+  const getPageHeader = () => {
+    const exact = navigation.find((item) => !item.isHeader && item.href && location.pathname === item.href);
+    if (exact) return { name: exact.name, icon: exact.icon };
+
+    const nested = navigation.find(
+      (item) => !item.isHeader && item.href && item.href !== "/" && location.pathname.startsWith(item.href)
+    );
+    if (nested) return { name: nested.name, icon: nested.icon };
+
+    if (location.pathname === "/marketing-genius") {
+      return { name: "Marketing Genius AI", icon: Sparkles };
+    }
+
+    return { name: "Dashboard", icon: LayoutDashboard };
+  };
+
+  const pageHeader = getPageHeader();
+  const isMarketingGenius = location.pathname === "/marketing-genius";
 
   const isLinkedInGenerateRoute = location.pathname.includes('/content/linkedin/') && location.pathname.endsWith('/generate');
   const isFullWidthRoute =
@@ -337,9 +357,31 @@ const Layout = () => {
           </button>
 
           <div className="flex flex-1 items-center">
-            <h2 className="text-lg font-semibold text-foreground">
-              {navigation.find(item => location.pathname === item.href)?.name || 'Dashboard'}
-            </h2>
+            <div
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-1.5",
+                isMarketingGenius && "bg-primary/10 border border-primary/20"
+              )}
+            >
+              {pageHeader.icon && (
+                <div
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+                    isMarketingGenius ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <pageHeader.icon className="h-4 w-4" />
+                </div>
+              )}
+              <h2
+                className={cn(
+                  "text-base sm:text-lg font-bold tracking-tight",
+                  isMarketingGenius ? "text-primary" : "text-foreground"
+                )}
+              >
+                {pageHeader.name}
+              </h2>
+            </div>
           </div>
         </div>
 

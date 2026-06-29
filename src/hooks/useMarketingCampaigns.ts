@@ -10,7 +10,7 @@ export function useMarketingCampaigns() {
         .from("marketing_campaigns")
         .select("id, user_id, input, research, strategy, content, analytics, created_at")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(100);
 
       if (error) throw error;
       return ((data ?? []) as MarketingCampaignRow[]).map(rowToFullCampaign);

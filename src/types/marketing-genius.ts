@@ -143,10 +143,25 @@ export interface MarketingCampaignRow {
   created_at: string;
 }
 
+/** Ensures legacy/partial Supabase rows never leave required string fields undefined. */
+export function normalizeCompanyInput(input: Partial<CompanyInput> | null | undefined): CompanyInput {
+  return {
+    companyName: input?.companyName ?? "",
+    industry: input?.industry ?? "",
+    country: input?.country ?? "",
+    productService: input?.productService ?? "",
+    targetAudience: input?.targetAudience ?? "",
+    knownCompetitors: input?.knownCompetitors ?? "",
+    campaignGoal: input?.campaignGoal ?? "",
+    budgetRange: input?.budgetRange ?? "",
+    channels: Array.isArray(input?.channels) ? input.channels : [],
+  };
+}
+
 export function rowToFullCampaign(row: MarketingCampaignRow): FullCampaign {
   return {
     id: row.id,
-    input: row.input,
+    input: normalizeCompanyInput(row.input),
     research: row.research,
     strategy: row.strategy,
     content: row.content,
