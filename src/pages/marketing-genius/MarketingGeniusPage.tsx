@@ -21,7 +21,6 @@ import { useMarketingGeniusStream } from "@/hooks/useMarketingGeniusStream";
 import { CampaignHistory } from "@/components/marketing-genius/CampaignHistory";
 import { CampaignResults, AgentPipeline } from "@/components/marketing-genius/CampaignResults";
 import {
-  MarketingGeniusSidebar,
   MarketingGeniusSubNav,
   type MarketingGeniusView,
 } from "@/components/marketing-genius/MarketingGeniusNav";
@@ -345,56 +344,6 @@ function CompanyForm({
   );
 }
 
-function HomeOverview({ onCreateClick }: { onCreateClick: () => void }) {
-  return (
-    <Card className="border-border/80 shadow-sm w-full">
-      <CardContent className="py-12 px-6">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold">Welcome to Marketing Genius AI</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Four specialized AI agents research your market, craft strategy, generate content, and
-              forecast ROI — all in one workflow.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-            {INITIAL_AGENTS.map((agent, index) => {
-              const Icon = ICONS[agent.name];
-              return (
-                <div
-                  key={agent.name}
-                  className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary text-xs font-semibold">
-                    {index + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                      {agent.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <Button
-            onClick={onCreateClick}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Create Your First Campaign
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function HistoryPlaceholder() {
   return (
     <Card className="border-dashed border-border/80 bg-muted/20 shadow-none w-full">
@@ -435,84 +384,76 @@ export default function MarketingGeniusPage() {
   };
 
   return (
-    <div className="w-full py-1">
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
-        <MarketingGeniusSidebar activeView={activeView} onViewChange={setActiveView} />
+    <div className="w-full space-y-5 py-1">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold flex items-center gap-2.5">
+          <Sparkles className="w-6 h-6 text-primary" />
+          Marketing Genius AI
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Four specialized AI agents research your market, craft strategy, generate content, and
+          forecast ROI.
+        </p>
+      </div>
 
-        <div className="flex-1 min-w-0 space-y-5">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold flex items-center gap-2.5">
-              <Sparkles className="w-6 h-6 text-primary" />
-              Marketing Genius AI
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Four specialized AI agents research your market, craft strategy, generate content, and
-              forecast ROI.
-            </p>
+      <MarketingGeniusSubNav activeView={activeView} onViewChange={setActiveView} />
+
+      {error && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+          <div>
+            <p className="font-medium text-destructive">Generation failed</p>
+            <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            <button type="button" onClick={reset} className="text-sm underline mt-2 hover:text-foreground">
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeView === "create" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
+          <div className="lg:col-span-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+            <Card className="shadow-sm border-border/80 w-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Company Details</CardTitle>
+                <CardDescription>Tell our AI agents about your business and campaign goals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CompanyForm
+                  form={form}
+                  setForm={setForm}
+                  isGenerating={isGenerating}
+                  onSubmit={handleGenerate}
+                  onLoadDemo={handleLoadDemo}
+                />
+              </CardContent>
+            </Card>
           </div>
 
-          <MarketingGeniusSubNav activeView={activeView} onViewChange={setActiveView} />
-
-          {error && (
-            <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
-              <div>
-                <p className="font-medium text-destructive">Generation failed</p>
-                <p className="text-sm text-muted-foreground mt-1">{error}</p>
-                <button type="button" onClick={reset} className="text-sm underline mt-2 hover:text-foreground">
-                  Try again
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activeView === "home" && <HomeOverview onCreateClick={() => setActiveView("create")} />}
-
-          {activeView === "create" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
-              <div className="lg:col-span-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-                <Card className="shadow-sm border-border/80 w-full">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Company Details</CardTitle>
-                    <CardDescription>Tell our AI agents about your business and campaign goals</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <CompanyForm
-                      form={form}
-                      setForm={setForm}
-                      isGenerating={isGenerating}
-                      onSubmit={handleGenerate}
-                      onLoadDemo={handleLoadDemo}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
-                {showCreatePlaceholder && <OutputPlaceholder />}
-                {showPipeline && <AgentPipeline agents={agents} isGenerating={isGenerating} />}
-                {campaign && <CampaignResults campaign={campaign} />}
-              </div>
-            </div>
-          )}
-
-          {activeView === "history" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
-              <div className="lg:col-span-4 lg:sticky lg:top-20">
-                <CampaignHistory
-                  variant="full"
-                  activeCampaignId={historyCampaign?.id}
-                  onSelect={handleSelectHistory}
-                />
-              </div>
-              <div className="lg:col-span-8 space-y-5 min-w-0 w-full">
-                {!historyCampaign && <HistoryPlaceholder />}
-                {historyCampaign && <CampaignResults campaign={historyCampaign} />}
-              </div>
-            </div>
-          )}
+          <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
+            {showCreatePlaceholder && <OutputPlaceholder />}
+            {showPipeline && <AgentPipeline agents={agents} isGenerating={isGenerating} />}
+            {campaign && <CampaignResults campaign={campaign} />}
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeView === "history" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full">
+          <div className="lg:col-span-4 lg:sticky lg:top-20">
+            <CampaignHistory
+              variant="full"
+              activeCampaignId={historyCampaign?.id}
+              onSelect={handleSelectHistory}
+            />
+          </div>
+          <div className="lg:col-span-8 space-y-5 min-w-0 w-full">
+            {!historyCampaign && <HistoryPlaceholder />}
+            {historyCampaign && <CampaignResults campaign={historyCampaign} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
